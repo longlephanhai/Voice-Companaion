@@ -4,6 +4,8 @@ import com.google.gson.*;
 
 import java.io.*;
 import java.net.*;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 
 public class GeminiAPI {
@@ -16,20 +18,20 @@ public class GeminiAPI {
         try {
             // Parse string: "Text: ... Emotion: ..., Confidence: ..."
             String text = "";
-            String emotion = "";
+            String emotionShort = "";
             String confidence = "";
             try {
                 String[] parts = pythonResponse.split(" Emotion: ");
                 text = parts[0].replace("Text: ", "").trim();
                 String[] parts2 = parts[1].split(", Confidence: ");
-                emotion = parts2[0].trim();
+                emotionShort = parts2[0].trim();
                 confidence = parts2[1].trim();
             } catch (Exception e) {
                 return "Không parse được string PythonResponse: " + pythonResponse;
             }
 
-            String prompt = "User vừa nói: \"" + text + "\". Cảm xúc: " + emotion +
-                    ". Hãy đóng vai một người bạn đồng hành, đưa lời khuyên phù hợp.";
+            // Map nhãn rút gọn sang dạng đầy đủ
+            String prompt = getString(emotionShort, text);
 
             return callGemini(prompt);
 
@@ -38,6 +40,22 @@ public class GeminiAPI {
             return "Lỗi xử lý PythonResponse hoặc gọi Gemini API";
         }
     }
+
+    private static String getString(String emotionShort, String text) {
+        Map<String, String> emotionMap = new HashMap<>();
+        emotionMap.put("hap", "happy");
+        emotionMap.put("ang", "angry");
+        emotionMap.put("neu", "neutral");
+        emotionMap.put("sad", "sad");
+
+        String emotion = emotionMap.getOrDefault(emotionShort, emotionShort);
+
+        // Tạo prompt gửi cho Gemini
+        String prompt = "User vừa nói: \"" + text + "\". Cảm xúc: " + emotion +
+                ". Hãy đóng vai một người bạn đồng hành, đưa lời khuyên phù hợp.";
+        return prompt;
+    }
+
 
     private static String callGemini(String prompt) {
         try {

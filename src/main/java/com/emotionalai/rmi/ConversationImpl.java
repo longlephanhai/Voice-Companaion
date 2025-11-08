@@ -1,6 +1,5 @@
 package com.emotionalai.rmi;
 
-import com.emotionalai.controller.ConversationController;
 import com.emotionalai.model.Conversation;
 import com.emotionalai.utils.GeminiAPI;
 import com.emotionalai.utils.SpeechToText;
@@ -17,7 +16,6 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 
 public class ConversationImpl extends UnicastRemoteObject implements ConversationInterface {
-    private ConversationController controller = new ConversationController();
 
     protected ConversationImpl() throws RemoteException {
     }

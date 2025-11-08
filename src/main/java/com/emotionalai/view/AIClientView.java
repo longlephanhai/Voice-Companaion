@@ -1,5 +1,6 @@
 package com.emotionalai.view;
 
+import com.emotionalai.config.RMIConnection;
 import com.emotionalai.rmi.ConversationInterface;
 import com.emotionalai.utils.VoiceRecorder;
 import javazoom.jl.player.Player;
@@ -8,8 +9,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.io.File;
 import java.io.FileInputStream;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -24,8 +23,9 @@ public class AIClientView extends JFrame {
     private Player currentPlayer;
 
     public AIClientView() {
+        ai = RMIConnection.getInstance().getAI();
+
         setupUI();
-        connectToRMI();
         attachListeners();
     }
 
@@ -36,14 +36,12 @@ public class AIClientView extends JFrame {
         setLocationRelativeTo(null);
         setLayout(new BorderLayout(10, 10));
 
-        // Title
         JLabel title = new JLabel("Emotional AI Chat", JLabel.CENTER);
         title.setFont(new Font("Segoe UI", Font.BOLD, 22));
         title.setForeground(new Color(0, 90, 180));
         title.setBorder(BorderFactory.createEmptyBorder(15, 0, 15, 0));
         add(title, BorderLayout.NORTH);
 
-        // Chat Panel
         chatPanel = new JPanel();
         chatPanel.setLayout(new BoxLayout(chatPanel, BoxLayout.Y_AXIS));
         chatPanel.setBackground(new Color(245, 247, 250));
@@ -53,10 +51,10 @@ public class AIClientView extends JFrame {
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         add(scrollPane, BorderLayout.CENTER);
 
-        // Controls
         add(createControlPanel(), BorderLayout.SOUTH);
 
-        addMessage("AI", "Xin chào! Hãy ghi âm và gửi cho tôi để bắt đầu trò chuyện!", false);
+        addMessage("AI", ai != null ? "Xin chào! Hãy ghi âm và gửi cho tôi để bắt đầu trò chuyện!"
+                : "Không thể kết nối AI!", false);
     }
 
     private JPanel createControlPanel() {
@@ -108,17 +106,6 @@ public class AIClientView extends JFrame {
         return btn;
     }
 
-    private void connectToRMI() {
-        try {
-            Registry registry = LocateRegistry.getRegistry("localhost", 1099);
-            ai = (ConversationInterface) registry.lookup("AIChat");
-            addMessage("AI", "Kết nối RMI thành công!", false);
-        } catch (Exception e) {
-            e.printStackTrace();
-            addMessage("AI", "Không thể kết nối server AI: " + e.getMessage(), false);
-        }
-    }
-
     private void attachListeners() {
         btnRecord.addActionListener(e -> startRecording());
         btnStop.addActionListener(e -> stopRecording());
@@ -146,6 +133,10 @@ public class AIClientView extends JFrame {
     }
 
     private void sendAudioToAI() {
+        if (ai == null) {
+            addMessage("System", "Không có kết nối AI!", false);
+            return;
+        }
         try {
             lblStatus.setText("Đang gửi audio...");
             btnSendAI.setEnabled(false);
@@ -159,7 +150,6 @@ public class AIClientView extends JFrame {
             addMessage("AI", "AI đang xử lý...", false);
             lblStatus.setText("AI đã phản hồi");
 
-            // Phát audio phản hồi MP3
             playMP3(responseAudio);
 
         } catch (Exception e) {
@@ -172,13 +162,10 @@ public class AIClientView extends JFrame {
         }
     }
 
-    /** ------------------ Audio Playback MP3 ------------------ */
     private void playMP3(String filePath) {
         new Thread(() -> {
             try {
-                if (currentPlayer != null) {
-                    currentPlayer.close();
-                }
+                if (currentPlayer != null) currentPlayer.close();
                 FileInputStream fis = new FileInputStream(filePath);
                 currentPlayer = new Player(fis);
                 currentPlayer.play();
@@ -189,7 +176,6 @@ public class AIClientView extends JFrame {
         }).start();
     }
 
-    /** ------------------ Chat Message ------------------ */
     private void addMessage(String sender, String message, boolean isUser) {
         SwingUtilities.invokeLater(() -> {
             JPanel wrapper = new JPanel(new BorderLayout());
