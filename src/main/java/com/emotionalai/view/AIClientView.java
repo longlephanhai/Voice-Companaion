@@ -1,5 +1,6 @@
 package com.emotionalai.view;
 
+import com.emotionalai.model.User;
 import com.emotionalai.config.RMIConnection;
 import com.emotionalai.rmi.ConversationInterface;
 import com.emotionalai.utils.VoiceRecorder;
@@ -21,12 +22,15 @@ public class AIClientView extends JFrame {
     private String userAudioPath = "input.wav";
     private ConversationInterface ai;
     private Player currentPlayer;
+    private User currentUser; // người dùng đang login
 
-    public AIClientView() {
+    public AIClientView(User user) {
+        this.currentUser = user;
         ai = RMIConnection.getInstance().getAI();
 
         setupUI();
         attachListeners();
+        updateUIForLogin();
     }
 
     private void setupUI() {
@@ -53,8 +57,7 @@ public class AIClientView extends JFrame {
 
         add(createControlPanel(), BorderLayout.SOUTH);
 
-        addMessage("AI", ai != null ? "Xin chào! Hãy ghi âm và gửi cho tôi để bắt đầu trò chuyện!"
-                : "Không thể kết nối AI!", false);
+        addMessage("AI", "Xin chào! Hãy ghi âm và gửi cho tôi để bắt đầu trò chuyện!", false);
     }
 
     private JPanel createControlPanel() {
@@ -111,6 +114,15 @@ public class AIClientView extends JFrame {
         btnStop.addActionListener(e -> stopRecording());
         btnPlay.addActionListener(e -> new Thread(() -> playMP3(userAudioPath)).start());
         btnSendAI.addActionListener(e -> new Thread(this::sendAudioToAI).start());
+    }
+
+    private void updateUIForLogin() {
+        boolean loggedIn = currentUser != null;
+        btnRecord.setEnabled(loggedIn);
+        btnSendAI.setEnabled(loggedIn);
+        if (!loggedIn) {
+            lblStatus.setText("Vui lòng đăng nhập để sử dụng AI Chat");
+        }
     }
 
     private void startRecording() {
@@ -232,12 +244,8 @@ public class AIClientView extends JFrame {
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            try {
-                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            new AIClientView().setVisible(true);
+            try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); } catch(Exception e){ e.printStackTrace(); }
+            new AIClientView(null).setVisible(true);
         });
     }
 }

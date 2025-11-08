@@ -1,14 +1,19 @@
 package com.emotionalai.model;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class User {
+public class User implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
+
     private int id;
     private String username;
     private String email;
     private String password;
-    private List<Conversation> conversations;
+    private final List<Conversation> conversations;
 
     public User(String username, String email, String password) {
         this.username = username;

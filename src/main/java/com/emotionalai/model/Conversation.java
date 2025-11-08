@@ -1,8 +1,13 @@
 package com.emotionalai.model;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
-public class Conversation {
+public class Conversation implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
+
     private int id;
     private User user; // người dùng tạo conversation
     private String userText;
