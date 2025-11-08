@@ -16,15 +16,13 @@ public class TextToSpeech {
         String credPath = System.getenv("GOOGLE_APPLICATION_CREDENTIALS");
         System.out.println("GOOGLE_APPLICATION_CREDENTIALS = " + credPath);
 
-        // ⚙️ Kiểm tra credentials
         if (credPath == null || !new File(credPath).exists()) {
-            throw new RuntimeException("❌ Credential file not found or not set properly!");
+            throw new RuntimeException("Credential file not found or not set properly!");
         }
 
-        // 🧹 Làm sạch text trước khi đọc
         text = cleanText(text);
 
-        // ✅ Khởi tạo client với credentials
+        //  Khởi tạo client với credentials
         GoogleCredentials credentials = GoogleCredentials.fromStream(Files.newInputStream(Paths.get(credPath)));
         TextToSpeechSettings settings = TextToSpeechSettings.newBuilder()
                 .setCredentialsProvider(() -> credentials)
@@ -32,38 +30,47 @@ public class TextToSpeech {
 
         try (TextToSpeechClient ttsClient = TextToSpeechClient.create(settings)) {
 
-            // 1️⃣ Chuẩn bị văn bản
+            // Chuẩn bị văn bản
             SynthesisInput input = SynthesisInput.newBuilder()
                     .setText(text)
                     .build();
 
-            // 2️⃣ Điều chỉnh cảm xúc
             double pitch = 0.0;
             double speakingRate = 1.0;
-            String voiceName = "vi-VN-Neural2-A"; // giọng nữ mặc định
+            String voiceName = "vi-VN-Neural2-A";
 
             if (emotion != null) {
                 switch (emotion.toLowerCase()) {
                     case "sad":
-                        pitch = -3.0;
+                        pitch = -2.5;
                         speakingRate = 0.9;
                         break;
+
                     case "happy":
-                        pitch = 3.0;
+                        pitch = 2.5;
                         speakingRate = 1.1;
                         break;
+
                     case "angry":
-                    case "ang":
-                        pitch = 2.0;
-                        speakingRate = 1.2;
-                        voiceName = "vi-VN-Neural2-D"; // giọng nam
+                    case "frustration":
+                        pitch = -1.0;
+                        speakingRate = 0.95;
                         break;
+
+                    case "fear":
+                    case "disgust":
+                        pitch = -1.5;
+                        speakingRate = 0.9;
+                        break;
+
                     default:
+                        pitch = 0.0;
+                        speakingRate = 1.0;
                         break;
                 }
             }
 
-            // 🧠 Giới tính tự động
+
             SsmlVoiceGender gender = voiceName.endsWith("A")
                     ? SsmlVoiceGender.FEMALE
                     : SsmlVoiceGender.MALE;
@@ -73,43 +80,43 @@ public class TextToSpeech {
                     " | Pitch: " + pitch +
                     " | Rate: " + speakingRate);
 
-            // 3️⃣ Cấu hình giọng
+            // Cấu hình giọng
             VoiceSelectionParams voice = VoiceSelectionParams.newBuilder()
                     .setLanguageCode("vi-VN")
                     .setName(voiceName)
                     .setSsmlGender(gender)
                     .build();
 
-            // 4️⃣ Cấu hình âm thanh
+            // Cấu hình âm thanh
             AudioConfig audioConfig = AudioConfig.newBuilder()
                     .setAudioEncoding(AudioEncoding.MP3)
                     .setPitch((float) pitch)
                     .setSpeakingRate((float) speakingRate)
                     .build();
 
-            // 5️⃣ Gọi API
+            // Gọi API
             SynthesizeSpeechResponse response = ttsClient.synthesizeSpeech(input, voice, audioConfig);
             ByteString audioContents = response.getAudioContent();
 
-            // 6️⃣ Xuất file
+            // Xuất file
             Files.createDirectories(Paths.get("audio_output"));
             String outputFile = "audio_output/output_" + System.currentTimeMillis() + ".mp3";
             try (OutputStream out = new FileOutputStream(outputFile)) {
                 out.write(audioContents.toByteArray());
             }
 
-            System.out.println("✅ Đã tạo file giọng nói: " + outputFile);
+            System.out.println("Đã tạo file giọng nói: " + outputFile);
             return outputFile;
         }
     }
 
-    // 🧽 Làm sạch text để tránh lỗi phát âm / SSML
+    //  Làm sạch text để tránh lỗi phát âm / SSML
     private static String cleanText(String text) {
         if (text == null) return "";
 
         return text
-                .replaceAll("\\*", "")      // bỏ dấu **
-                .replaceAll("_", "")        // bỏ dấu _
+                .replaceAll("\\*", "")
+                .replaceAll("_", "")
                 .replaceAll("#", "")
                 .replaceAll("<", "(")
                 .replaceAll(">", ")")
@@ -117,7 +124,7 @@ public class TextToSpeech {
                 .replaceAll("```", "")
                 .replaceAll("\"", "")
                 .replaceAll("’", "'")
-                .replaceAll("\\s+", " ")    // gộp khoảng trắng
+                .replaceAll("\\s+", " ")
                 .trim();
     }
 }

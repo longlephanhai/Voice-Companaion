@@ -76,7 +76,7 @@ public class GeminiAPI {
                 return "Gemini API lỗi: " + responseCode;
             }
 
-            // ✅ Parse chính xác text phản hồi
+            // Parse chính xác text phản hồi
             JsonObject responseJson = JsonParser.parseString(responseStr).getAsJsonObject();
             JsonArray candidates = responseJson.getAsJsonArray("candidates");
             if (candidates != null && candidates.size() > 0) {

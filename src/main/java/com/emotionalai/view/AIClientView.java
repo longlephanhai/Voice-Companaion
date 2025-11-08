@@ -2,11 +2,12 @@ package com.emotionalai.view;
 
 import com.emotionalai.rmi.ConversationInterface;
 import com.emotionalai.utils.VoiceRecorder;
+import javazoom.jl.player.Player;
 
-import javax.sound.sampled.*;
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
+import java.io.FileInputStream;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.text.SimpleDateFormat;
@@ -20,7 +21,7 @@ public class AIClientView extends JFrame {
     private JScrollPane scrollPane;
     private String userAudioPath = "input.wav";
     private ConversationInterface ai;
-    private Clip currentClip;
+    private Player currentPlayer;
 
     public AIClientView() {
         setupUI();
@@ -28,27 +29,24 @@ public class AIClientView extends JFrame {
         attachListeners();
     }
 
-    /**
-     * ------------------ UI Setup ------------------
-     */
     private void setupUI() {
-        setTitle("AI Voice Chat - Emotional AI");
-        setSize(600, 700);
+        setTitle("🎧 Emotional AI Chat");
+        setSize(650, 750);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout(10, 10));
 
         // Title
         JLabel title = new JLabel("Emotional AI Chat", JLabel.CENTER);
-        title.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        title.setForeground(new Color(0, 100, 200));
-        title.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+        title.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        title.setForeground(new Color(0, 90, 180));
+        title.setBorder(BorderFactory.createEmptyBorder(15, 0, 15, 0));
         add(title, BorderLayout.NORTH);
 
         // Chat Panel
         chatPanel = new JPanel();
         chatPanel.setLayout(new BoxLayout(chatPanel, BoxLayout.Y_AXIS));
-        chatPanel.setBackground(new Color(240, 242, 245));
+        chatPanel.setBackground(new Color(245, 247, 250));
         scrollPane = new JScrollPane(chatPanel);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
@@ -67,10 +65,10 @@ public class AIClientView extends JFrame {
         panel.setBackground(Color.WHITE);
 
         lblStatus = new JLabel("Trạng thái: Sẵn sàng");
-        lblStatus.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        lblStatus.setForeground(Color.GRAY);
+        lblStatus.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblStatus.setForeground(Color.DARK_GRAY);
 
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 5));
         buttonPanel.setBackground(Color.WHITE);
 
         btnRecord = createButton("🎤 Ghi âm", new Color(76, 175, 80));
@@ -78,7 +76,7 @@ public class AIClientView extends JFrame {
         btnPlay = createButton("▶ Nghe", new Color(33, 150, 243));
         btnSendAI = createButton("🚀 Gửi AI", new Color(156, 39, 176));
 
-        Dimension btnSize = new Dimension(100, 35);
+        Dimension btnSize = new Dimension(120, 40);
         btnRecord.setPreferredSize(btnSize);
         btnStop.setPreferredSize(btnSize);
         btnPlay.setPreferredSize(btnSize);
@@ -101,21 +99,15 @@ public class AIClientView extends JFrame {
 
     private JButton createButton(String text, Color color) {
         JButton btn = new JButton(text);
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btn.setBackground(color);
         btn.setForeground(Color.WHITE);
         btn.setFocusPainted(false);
-        btn.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(color.darker(), 1),
-                BorderFactory.createEmptyBorder(8, 15, 8, 15)
-        ));
+        btn.setBorder(BorderFactory.createLineBorder(color.darker(), 1, true));
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         return btn;
     }
 
-    /**
-     * ------------------ RMI ------------------
-     */
     private void connectToRMI() {
         try {
             Registry registry = LocateRegistry.getRegistry("localhost", 1099);
@@ -127,13 +119,10 @@ public class AIClientView extends JFrame {
         }
     }
 
-    /**
-     * ------------------ Event Listeners ------------------
-     */
     private void attachListeners() {
         btnRecord.addActionListener(e -> startRecording());
         btnStop.addActionListener(e -> stopRecording());
-        btnPlay.addActionListener(e -> new Thread(() -> playAudio(userAudioPath)).start());
+        btnPlay.addActionListener(e -> new Thread(() -> playMP3(userAudioPath)).start());
         btnSendAI.addActionListener(e -> new Thread(this::sendAudioToAI).start());
     }
 
@@ -164,15 +153,14 @@ public class AIClientView extends JFrame {
 
             addMessage("Bạn", "Đang gửi audio tới AI...", true);
 
-            // Chuyển file thành byte[]
             byte[] audioBytes = java.nio.file.Files.readAllBytes(new File(userAudioPath).toPath());
             String responseAudio = ai.talkWithUser(audioBytes);
 
-            addMessage("AI", "Đã nhận audio. AI đang xử lý...", false);
+            addMessage("AI", "AI đang xử lý...", false);
             lblStatus.setText("AI đã phản hồi");
-            System.out.println("response ai" + responseAudio);
-            // Phát audio phản hồi
-            playAudio(responseAudio);
+
+            // Phát audio phản hồi MP3
+            playMP3(responseAudio);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -184,52 +172,24 @@ public class AIClientView extends JFrame {
         }
     }
 
-    /**
-     * ------------------ Audio Playback ------------------
-     */
-    private void playAudio(String filePath) {
-        try {
-            if (currentClip != null && currentClip.isRunning()) {
-                currentClip.stop();
-                currentClip.close();
-            }
-
-            File audioFile = new File(filePath);
-            if (!audioFile.exists() || audioFile.length() == 0) {
-                addMessage("System", "File âm thanh không tồn tại hoặc trống", false);
-                return;
-            }
-
-            AudioInputStream audioStream = AudioSystem.getAudioInputStream(audioFile);
-            AudioFormat format = audioStream.getFormat();
-            DataLine.Info info = new DataLine.Info(Clip.class, format);
-
-            if (!AudioSystem.isLineSupported(info)) {
-                addMessage("System", "Định dạng audio không được hỗ trợ", false);
-                audioStream.close();
-                return;
-            }
-
-            currentClip = (Clip) AudioSystem.getLine(info);
-            currentClip.open(audioStream);
-            currentClip.start();
-
-            currentClip.addLineListener(event -> {
-                if (event.getType() == LineEvent.Type.STOP) {
-                    SwingUtilities.invokeLater(() -> addMessage("System", "Phát xong", false));
-                    currentClip.close();
+    /** ------------------ Audio Playback MP3 ------------------ */
+    private void playMP3(String filePath) {
+        new Thread(() -> {
+            try {
+                if (currentPlayer != null) {
+                    currentPlayer.close();
                 }
-            });
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            addMessage("System", "Lỗi phát audio: " + e.getMessage(), false);
-        }
+                FileInputStream fis = new FileInputStream(filePath);
+                currentPlayer = new Player(fis);
+                currentPlayer.play();
+            } catch (Exception e) {
+                e.printStackTrace();
+                addMessage("System", "Lỗi phát audio: " + e.getMessage(), false);
+            }
+        }).start();
     }
 
-    /**
-     * ------------------ Chat Message ------------------
-     */
+    /** ------------------ Chat Message ------------------ */
     private void addMessage(String sender, String message, boolean isUser) {
         SwingUtilities.invokeLater(() -> {
             JPanel wrapper = new JPanel(new BorderLayout());
@@ -238,14 +198,14 @@ public class AIClientView extends JFrame {
 
             JPanel msgPanel = new JPanel(new BorderLayout());
             msgPanel.setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createLineBorder(new Color(200, 200, 200), 1),
+                    BorderFactory.createLineBorder(new Color(200, 200, 200), 1, true),
                     BorderFactory.createEmptyBorder(10, 15, 10, 15)
             ));
             msgPanel.setBackground(isUser ? new Color(220, 248, 198) : Color.WHITE);
 
             JLabel senderLabel = new JLabel(sender);
             senderLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
-            senderLabel.setForeground(isUser ? new Color(0, 100, 0) : new Color(100, 100, 200));
+            senderLabel.setForeground(isUser ? new Color(0, 100, 0) : new Color(0, 0, 150));
 
             JLabel timeLabel = new JLabel(new SimpleDateFormat("HH:mm").format(new Date()));
             timeLabel.setFont(new Font("Segoe UI", Font.PLAIN, 10));
@@ -266,7 +226,7 @@ public class AIClientView extends JFrame {
 
             msgPanel.add(header, BorderLayout.NORTH);
             msgPanel.add(msgArea, BorderLayout.CENTER);
-            msgPanel.setMaximumSize(new Dimension(400, Integer.MAX_VALUE));
+            msgPanel.setMaximumSize(new Dimension(450, Integer.MAX_VALUE));
 
             wrapper.add(msgPanel, isUser ? BorderLayout.EAST : BorderLayout.WEST);
             chatPanel.add(wrapper);
@@ -280,7 +240,7 @@ public class AIClientView extends JFrame {
 
     @Override
     public void dispose() {
-        if (currentClip != null) currentClip.close();
+        if (currentPlayer != null) currentPlayer.close();
         super.dispose();
     }
 
