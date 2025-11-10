@@ -23,7 +23,6 @@ public class User implements Serializable {
     }
 
     public void addConversation(Conversation conversation) {
-        conversation.setUser(this); // gán user cho conversation
         this.conversations.add(conversation);
     }
 

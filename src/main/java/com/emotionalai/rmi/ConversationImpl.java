@@ -21,8 +21,8 @@ public class ConversationImpl extends UnicastRemoteObject implements Conversatio
     }
 
     @Override
-    public String talkWithUser(byte[] audioData) throws RemoteException {
-        return conversationService.talkWithUser(audioData);
+    public String talkWithUser(byte[] audioData, int userId) throws RemoteException {
+        return conversationService.talkWithUser(audioData, userId);
     }
 
 

@@ -157,7 +157,7 @@ public class AIClientView extends JFrame {
             addMessage("Bạn", "Đang gửi audio tới AI...", true);
 
             byte[] audioBytes = java.nio.file.Files.readAllBytes(new File(userAudioPath).toPath());
-            String responseAudio = ai.talkWithUser(audioBytes);
+            String responseAudio = ai.talkWithUser(audioBytes, currentUser.getId());
 
             addMessage("AI", "AI đang xử lý...", false);
             lblStatus.setText("AI đã phản hồi");

@@ -9,21 +9,30 @@ public class Conversation implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private int id;
-    private User user; // người dùng tạo conversation
+    private int userId;
     private String userText;
     private String aiText;
     private String emotion;
     private LocalDateTime timestamp;
 
-    public Conversation(User user, String userText, String aiText, String emotion) {
-        this.user = user;
+    private String userAudioPath;
+    private String aiAudioPath;
+
+    public Conversation() {
+    }
+
+    public Conversation(int userId, String userText, String aiText, String emotion,
+                        String userAudioPath, String aiAudioPath) {
+        this.userId = userId;
         this.userText = userText;
         this.aiText = aiText;
         this.emotion = emotion;
+        this.userAudioPath = userAudioPath;
+        this.aiAudioPath = aiAudioPath;
         this.timestamp = LocalDateTime.now();
     }
 
-    // getters & setters
+    // Getters & Setters
     public int getId() {
         return id;
     }
@@ -32,12 +41,12 @@ public class Conversation implements Serializable {
         this.id = id;
     }
 
-    public User getUser() {
-        return user;
+    public int getUserId() {
+        return userId;
     }
 
-    public void setUser(User user) {
-        this.user = user;
+    public void setUserId(int userId) {
+        this.userId = userId;
     }
 
     public String getUserText() {
@@ -70,5 +79,35 @@ public class Conversation implements Serializable {
 
     public void setTimestamp(LocalDateTime timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public String getUserAudioPath() {
+        return userAudioPath;
+    }
+
+    public void setUserAudioPath(String userAudioPath) {
+        this.userAudioPath = userAudioPath;
+    }
+
+    public String getAiAudioPath() {
+        return aiAudioPath;
+    }
+
+    public void setAiAudioPath(String aiAudioPath) {
+        this.aiAudioPath = aiAudioPath;
+    }
+
+    @Override
+    public String toString() {
+        return "Conversation{" +
+                "id=" + id +
+                ", userId=" + userId +
+                ", userText='" + userText + '\'' +
+                ", aiText='" + aiText + '\'' +
+                ", emotion='" + emotion + '\'' +
+                ", timestamp=" + timestamp +
+                ", userAudioPath='" + userAudioPath + '\'' +
+                ", aiAudioPath='" + aiAudioPath + '\'' +
+                '}';
     }
 }

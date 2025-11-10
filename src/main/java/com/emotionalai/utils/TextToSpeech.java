@@ -9,10 +9,11 @@ import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.UUID;
 
 public class TextToSpeech {
 
-    public static String convert(String text, String emotion) throws Exception {
+    public static String convert(String text, String emotion, String aiAudioPath) throws Exception {
         String credPath = System.getenv("GOOGLE_APPLICATION_CREDENTIALS");
         System.out.println("GOOGLE_APPLICATION_CREDENTIALS = " + credPath);
 
@@ -97,16 +98,16 @@ public class TextToSpeech {
             // Gọi API
             SynthesizeSpeechResponse response = ttsClient.synthesizeSpeech(input, voice, audioConfig);
             ByteString audioContents = response.getAudioContent();
-
-            // Xuất file
-            Files.createDirectories(Paths.get("audio_output"));
-            String outputFile = "audio_output/output_" + System.currentTimeMillis() + ".mp3";
-            try (OutputStream out = new FileOutputStream(outputFile)) {
+            String uniqueId = UUID.randomUUID().toString();
+            // Xuất file    String tempFile = uploadDir + "user_" + uniqueId + ".wav";
+//            Files.createDirectories(Paths.get("uploads/ai/"));
+//            String outputFile = "uploads/ai/ai_" + uniqueId + ".mp3";
+            try (OutputStream out = new FileOutputStream(aiAudioPath)) {
                 out.write(audioContents.toByteArray());
             }
 
-            System.out.println("Đã tạo file giọng nói: " + outputFile);
-            return outputFile;
+            System.out.println("Đã tạo file giọng nói: " + aiAudioPath);
+            return aiAudioPath;
         }
     }
 
