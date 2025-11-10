@@ -1,7 +1,6 @@
 package com.emotionalai.service;
 
 import com.emotionalai.model.Conversation;
-import com.emotionalai.repository.AuthRepository;
 import com.emotionalai.repository.ConversationRepository;
 import com.emotionalai.utils.GeminiAPI;
 import com.emotionalai.utils.TextToSpeech;

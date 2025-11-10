@@ -71,6 +71,14 @@
             <version>1.0.1</version>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/org.opencv/opencv -->
+        <dependency>
+            <groupId>org.openpnp</groupId>
+            <artifactId>opencv</artifactId>
+            <version>4.7.0-0</version>
+        </dependency>
+
+
     </dependencies>
 
 
